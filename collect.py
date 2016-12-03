@@ -1,5 +1,6 @@
-import numpy as np
 import cv2
+
+import numpy as np
 import pyscreenshot as ImageGrab
 
 from iolistener import KeyBoardEventListener, MouseClickEventListener
@@ -30,8 +31,8 @@ img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
 # Grayscale, blur, and apply otsu for dynamic thresholding
 gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-blur = cv2.GaussianBlur(gray,(5,5),0)
-ret, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+blur = cv2.GaussianBlur(gray, (5, 5), 0)
+ret, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
 # Find contour of the image
 cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -39,15 +40,14 @@ cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
 # Keep only largest contour and crop image to the ROI
 cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
 roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(cnts)
-img_roi = img[roi_y:roi_y+roi_h,roi_x:roi_x+roi_w]
+img_roi = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
 
 # Rescale image to 85 x 145 (width, height)
-img = cv2.resize(img, (85, 145), interpolation=cv2.INTER_CUBIC)
+img = cv2.resize(img_roi, (85, 145), interpolation=cv2.INTER_CUBIC)
 
 # Show window
 cv2.imshow('Game Window', img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
 
 print('[X] Quitted')
