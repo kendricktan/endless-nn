@@ -1,19 +1,53 @@
 import numpy as np
 import cv2
 import pyscreenshot as ImageGrab
-from curtsies import Input
 
-while True:
-    with Input(keynames='curtsies') as input_generator:
-        # Hard coded, basically chrome window snapped to the right
-        # half of the screen
-        img = ImageGrab.grab(bbox=(150, 125, 515, 750))
-        img = np.array(img)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+from iolistener import KeyBoardEventListener, MouseClickEventListener
 
-        # Dynamically get the ROI
-        blur = cv2.GaussianBlur(img,(5,5),0)
-        ret, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+print('--- Endless Run Neural Network Approach ---')
+print('[X] Press "q" to quit')
+print('[!] Initializing...')
+print('[!] Ensure that the game window is initialized before proceeding')
+print('[!] Please click the top left and bottom right of the game window, and leave some margins')
 
+# Our IO listeners
+keyevents = KeyBoardEventListener()
+mouseevents = MouseClickEventListener()
+keyevents.start()
+mouseevents.start()
+
+# Wait until user specifies windows dimensions
+while len(mouseevents.clicked_positions) < 2:
+    pass
+
+# ROI for game window
+roi_game = tuple([i for sub in mouseevents.clicked_positions for i in sub])
+
+# Grab screenshot of image
+img = ImageGrab.grab(bbox=roi_game)
+img = np.array(img)
+img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+# Grayscale, blur, and apply otsu for dynamic thresholding
+gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+blur = cv2.GaussianBlur(gray,(5,5),0)
+ret, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+# Find contour of the image
+cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+# Keep only largest contour and crop image to the ROI
+cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
+roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(cnts)
+img_roi = img[roi_y:roi_y+roi_h,roi_x:roi_x+roi_w]
+
+# Rescale image to 85 x 145 (width, height)
+img = cv2.resize(img, (85, 145), interpolation=cv2.INTER_CUBIC)
+
+# Show window
+cv2.imshow('Game Window', img)
+cv2.waitKey(0)
 cv2.destroyAllWindows()
-print('quitted')
+
+
+print('[X] Quitted')
