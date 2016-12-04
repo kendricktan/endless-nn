@@ -1,12 +1,6 @@
 {
-  "scaledx": 85,
-  "scaledy": 145,
-  "__comments__": "Neural Network Inputs = [x * y]. Water = 0, Platform = 1, Player = 2",
-  "nn_input": [
-    17,
-    29
-  ],
-  "nn_output": 1,
+  "scaledx": 42,
+  "scaledy": 72,
   "platformmin_rgb": [
     120,
     220,
@@ -26,5 +20,15 @@
     255,
     255,
     10
+  ],
+  "playermin_rgb":[
+    255,
+    255,
+    255
+  ],
+  "playermax_rgb":[
+    255,
+    255,
+    255
   ]
 }

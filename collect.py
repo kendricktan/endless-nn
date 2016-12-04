@@ -4,6 +4,7 @@ import json
 import numpy as np
 import pyscreenshot as ImageGrab
 
+from scipy import stats
 from iolistener import KeyBoardEventListener, MouseClickEventListener
 
 print('--- Endless Run Neural Network Approach ---')
@@ -62,12 +63,12 @@ keyevents.end = False
 # Thresholding it on RGB should be fine
 # since it's static colors
 # Our upper and lower bound for thresholding
-NN_INPUT = SETTINGS['nn_input']
-NN_OUTPUT = SETTINGS['nn_output']
 LOWER_RGB_PLATFORM = np.array(SETTINGS['platformmin_rgb'])
 UPPER_RGB_PLATFORM = np.array(SETTINGS['platformmax_rgb'])
 LOWER_RGB_COIN = np.array(SETTINGS['coinmin_rgb'])
 UPPER_RGB_COIN = np.array(SETTINGS['coinmax_rgb'])
+LOWER_RGB_PLAYER = np.array(SETTINGS['playermin_rgb'])
+UPPER_RGB_PLAYER = np.array(SETTINGS['playermax_rgb'])
 while not keyevents.end:
     img = ImageGrab.grab(bbox=tuple(ROI_GAME))
     img = np.array(img)
@@ -82,12 +83,11 @@ while not keyevents.end:
     masked_img = cv2.bitwise_or(masked_platform, masked_coin)
     masked_img = cv2.medianBlur(masked_img, 3)
 
-    # Convert to bitmap size
+    # Masking player (Assuming it's the default player)
+    masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
 
-
-    # NN Input for water is 0
-    # Input for platform is 1
-    # Input for player is 2
+    cv2.imshow('img', masked_img)
+    cv2.waitKey(1)
 
 
 print('[X] Quitted')
