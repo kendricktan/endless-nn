@@ -53,17 +53,41 @@ roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(cnts)
 # img_roi = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
 # cv2.imshow('img', img_roi)
 # cv2.waitKey(0)
-raw_input('[!] Calibration complete, input anything to continue')
+print('[!] Calibration complete')
 print('[!] Press "q" to quit')
+print('[!]')
 keyevents.end = False
 
 # Rescale image to 85 x 145 (width, height)
+# Thresholding it on RGB should be fine
+# since it's static colors
+# Our upper and lower bound for thresholding
+NN_INPUT = SETTINGS['nn_input']
+NN_OUTPUT = SETTINGS['nn_output']
+LOWER_RGB_PLATFORM = np.array(SETTINGS['platformmin_rgb'])
+UPPER_RGB_PLATFORM = np.array(SETTINGS['platformmax_rgb'])
+LOWER_RGB_COIN = np.array(SETTINGS['coinmin_rgb'])
+UPPER_RGB_COIN = np.array(SETTINGS['coinmax_rgb'])
 while not keyevents.end:
     img = ImageGrab.grab(bbox=tuple(ROI_GAME))
     img = np.array(img)
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     img_roi = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
     img = cv2.resize(img_roi, (SETTINGS['scaledx'], SETTINGS['scaledy']), interpolation=cv2.INTER_CUBIC)
 
-print('[X] Quitted')
+    # Platform + coin thresholding
+    # Bitwise OR to get better view of platform
+    # Blur to reduce noise
+    masked_platform = cv2.inRange(img, LOWER_RGB_PLATFORM, UPPER_RGB_PLATFORM)
+    masked_coin = cv2.inRange(img, LOWER_RGB_COIN, UPPER_RGB_COIN)
+    masked_img = cv2.bitwise_or(masked_platform, masked_coin)
+    masked_img = cv2.medianBlur(masked_img, 3)
 
+    # Convert to bitmap size
+
+
+    # NN Input for water is 0
+    # Input for platform is 1
+    # Input for player is 2
+
+
+print('[X] Quitted')
