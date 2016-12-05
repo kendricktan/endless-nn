@@ -135,7 +135,6 @@ def eval_genome(genomes):
                 # NEAT evaluation takes place here
                 inputs = masked_platform_resized.flatten()
                 output = net.serial_activate(inputs)
-                print(output)
                 if output[0] > 0.5:
                     print('Jumping!')
                     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
