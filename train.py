@@ -5,6 +5,7 @@ import pickle
 import time
 
 import numpy as np
+import visualize
 from neat import nn, population
 from neat.config import Config
 from pymouse import PyMouse
@@ -61,8 +62,6 @@ cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
 roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(cnts)
 
 # Uncomment below to debug
-# img_roi = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
-# cv2.imshow('img', img_roi)
 # cv2.waitKey(0)
 print('[!] Calibration complete')
 print('[!] Press "q" to quit')
@@ -105,9 +104,10 @@ CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
 # How many runs per network
 RUNS_PER_NET = 5
 
-
 def eval_genome(genomes):
+    '''Fitness function for the GE'''
     for g in genomes:
+        #visualize.draw_net(g, view=True, fmt='png')
         net = nn.create_feed_forward_phenotype(g)
         fitnesses = []
         for i in range(RUNS_PER_NET):
@@ -127,20 +127,21 @@ def eval_genome(genomes):
                 masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
                 # Masking player (Assuming it's the default player)
-                # masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
-                # masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
+                # Get largest contour (most likely to be player)
+                masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
+                masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
+                cnts, _ = cv2.findContours(masked_player.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                try:
+                    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
+                    p_x, p_y, p_w, p_h = cv2.boundingRect(cnts)
+                    cv2.rectangle(img, (p_x, p_y), (p_x + p_w, p_y+p_h), (0, 255, 0), 2)
+                except:
+                    pass
 
                 # Resize image (use this as input)
                 masked_platform_resized = cv2.resize(masked_platform, (SETTINGS['scaledx'], SETTINGS['scaledy']),
                                                      interpolation=cv2.INTER_CUBIC)
                 # masked_player_resized = cv2.resize(masked_player, (SETTINGS['scaledx'], SETTINGS['scaledy']), interpolation=cv2.INTER_CUBIC)
-
-                # Combined image
-                # masked_combined = cv2.bitwise_or(masked_platform_resized, masked_player_resized)
-
-                # Jump
-                # if random.randint(0, 1) == 1:
-                #     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
 
                 # NEAT evaluation takes place here
                 inputs = masked_platform_resized.flatten()

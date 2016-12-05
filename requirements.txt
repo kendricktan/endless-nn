@@ -1,3 +1,4 @@
+graphviz==0.5.2
 neat-python==0.8
 Pillow==3.3.1
 PyUserInput==0.1.11

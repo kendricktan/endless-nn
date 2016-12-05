@@ -14,6 +14,7 @@ def timeit(f):
         return ret
     return wrapper
 
+@timeit
 def screenshot(region=None):
     global screen
 

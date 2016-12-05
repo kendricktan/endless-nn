@@ -3,5 +3,5 @@ Neural Networks to play Endless Lake
 
 # Dependencies
 ```
-sudo apt-get install python-xlib
+sudo apt-get install python-xlib python-pydot
 ```
