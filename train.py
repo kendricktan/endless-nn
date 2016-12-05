@@ -80,6 +80,9 @@ LOWER_RGB_PLAYER = np.array(SETTINGS['playermin_rgb'])
 UPPER_RGB_PLAYER = np.array(SETTINGS['playermax_rgb'])
 LOWER_RGB_PLAY_BUTTON = np.array(SETTINGS['playagain_min_rgb'])
 UPPER_RGB_PLAY_BUTTON = np.array(SETTINGS['playagain_max_rgb'])
+LOWER_RGB_SHOP_BUTTON = np.array(SETTINGS['shopbtn_min_rgb'])
+UPPER_RGB_SHOP_BUTTON = np.array(SETTINGS['shopbtn_max_rgb'])
+
 KERNEL = np.ones((5, 5), np.uint8)
 
 # Play again button position
@@ -89,12 +92,19 @@ PLAY_BUTTON_POSITION_X = ROI_GAME[2] / 2
 PLAY_BUTTON_POSITION_Y += ROI_GAME[1]
 PLAY_BUTTON_POSITION_X += ROI_GAME[0]
 
+# Shop replay button (occurs on 2k coins)
+SHOP_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 12.5 / 100)
+SHOP_BUTTON_POSITION_X = ROI_GAME[2] / 2
+SHOP_BUTTON_POSITION_Y += ROI_GAME[1]
+SHOP_BUTTON_POSITION_X += ROI_GAME[0]
+
 # Where to click to jump
 CLICK_JUMP_LOCATION_X = ROI_GAME[0] + (ROI_GAME[2] / 2)
 CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
 
 # How many runs per network
 RUNS_PER_NET = 5
+
 
 def eval_genome(genomes):
     for g in genomes:
@@ -136,23 +146,36 @@ def eval_genome(genomes):
                 inputs = masked_platform_resized.flatten()
                 output = net.serial_activate(inputs)
                 if output[0] > 0.5:
-                    print('Jumping!')
                     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
 
                 # Check if we lost
-                masked_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
+                masked_fb_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
 
-                if np.count_nonzero(masked_button) > 0:
+                if np.count_nonzero(masked_fb_button) > 0:
                     fitness = time.time() - start_time
+                    fitness = round(fitness, 2)
 
                     # Impossible to have such a low fitness
                     if (fitness > 0.5):
                         fitnesses.append(fitness)
                         print('[-] Lost, seconds elapsed: {}'.format(fitness))
 
+                    mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
                     mousehandler.click(PLAY_BUTTON_POSITION_X, PLAY_BUTTON_POSITION_Y, 1)
+
                     # Delay for the game to resume
                     time.sleep(1)
+
+                    # Check for the shop replay button (occurs @ 2k coins)
+                    img = screeny.screenshot(region=tuple(ROI_GAME))
+                    img = np.array(img)
+                    masked_shop_replay = cv2.inRange(img, LOWER_RGB_SHOP_BUTTON, UPPER_RGB_SHOP_BUTTON)
+                    masked_shop_replay = cv2.erode(masked_shop_replay, KERNEL)
+
+                    if np.count_nonzero(masked_shop_replay) > 15:
+                        mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
+                        time.sleep(1)
+
                     break
 
         # Genome's fitness is the worst performance across all nets
@@ -163,7 +186,7 @@ def eval_genome(genomes):
 local_dir = os.path.dirname(__file__)
 nn_config = Config(os.path.join(local_dir, 'neat_config'))
 pop = population.Population(nn_config)
-pop.run(eval_genome, 20)
+pop.run(eval_genome, 2000)
 
 print('Number of evaluations: {0}'.format(pop.total_evaluations))
 best_genome = pop.statistics.best_genome()

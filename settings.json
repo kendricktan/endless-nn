@@ -1,6 +1,6 @@
 {
-  "scaledx": 28,
-  "scaledy": 38,
+  "scaledx": 21,
+  "scaledy": 29,
   "platformmin_rgb": [
     120,
     220,
@@ -39,6 +39,16 @@
   "playagain_max_rgb":[
     70,
     135,
+    255
+  ],
+  "shopbtn_min_rgb":[
+    210,
+    160,
+    245
+  ],
+  "shopbtn_max_rgb":[
+    231,
+    185,
     255
   ]
 }
