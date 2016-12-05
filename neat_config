@@ -34,7 +34,7 @@ prob_replace_weight     = 0.1
 weight_mutation_power   = 0.5
 prob_mutate_activation  = 0.05
 prob_toggle_link        = 0.075
-reset_on_extinction     = 0.01
+reset_on_extinction     = 0
 
 [genotype compatibility]
 compatibility_threshold = 3.0
