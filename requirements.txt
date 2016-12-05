@@ -1,4 +1,4 @@
 Pillow==3.3.1
 prettytensor==0.6.2
+PyScreeze==0.1.8
 PyUserInput==0.1.11
-tensorflow==0.12.0rc0

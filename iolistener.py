@@ -12,7 +12,6 @@ class KeyBoardEventListener(PyKeyboardEvent):
     def tap(self, keycode, character, press):  # press is boolean; True for press, False for release
         if character == 'q':
             self.end = True
-        time.sleep(0.1)
 
 
 class MouseClickEventListener(PyMouseEvent):
@@ -24,4 +23,3 @@ class MouseClickEventListener(PyMouseEvent):
         if len(self.clicked_positions) < 2 and (x, y) not in self.clicked_positions:
             print('[E] Mouse Event: click, x: {}, y: {}'.format(x, y))
             self.clicked_positions.append((x, y))
-        time.sleep(0.3)
