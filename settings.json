@@ -1,0 +1,44 @@
+{
+  "scaledx": 28,
+  "scaledy": 38,
+  "platformmin_rgb": [
+    120,
+    220,
+    170
+  ],
+  "platformmax_rgb": [
+    255,
+    245,
+    205
+  ],
+  "coinmin_rgb": [
+    235,
+    210,
+    0
+  ],
+  "coinmax_rgb": [
+    255,
+    255,
+    70
+  ],
+  "playermin_rgb":[
+    200,
+    200,
+    200
+  ],
+  "playermax_rgb":[
+    255,
+    255,
+    255
+  ],
+  "playagain_min_rgb":[
+    60,
+    125,
+    250
+  ],
+  "playagain_max_rgb":[
+    70,
+    135,
+    255
+  ]
+}

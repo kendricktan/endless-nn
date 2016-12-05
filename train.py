@@ -2,9 +2,9 @@ import cv2
 import json
 import random
 import time
+import screeny
 
 import numpy as np
-import pyscreeze
 from pymouse import PyMouse
 
 from iolistener import KeyBoardEventListener, MouseClickEventListener
@@ -40,7 +40,7 @@ ROI_GAME = list(
 )
 
 # Grab screenshot of image
-img = pyscreeze.screenshot(region=tuple(ROI_GAME))
+img = screeny.screenshot(region=tuple(ROI_GAME))
 img = np.array(img)
 img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
@@ -92,7 +92,7 @@ CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
 
 start_time = time.time()
 while not keyevents.end:
-    img = pyscreeze.screenshot(region=tuple(ROI_GAME))
+    img = screeny.screenshot(region=tuple(ROI_GAME))
     img = np.array(img)
     img_roi = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
 
