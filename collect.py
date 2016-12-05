@@ -14,7 +14,7 @@ print('[X] Press "q" to quit')
 print('[!] Initializing...')
 
 # Settings
-with open('config.json', 'r') as f:
+with open('settings.json', 'r') as f:
     SETTINGS = json.load(f)
 
 print('[!] Ensure that the game window is initialized before proceeding')
@@ -119,8 +119,8 @@ while not keyevents.end:
     # masked_combined = cv2.bitwise_or(masked_platform_resized, masked_player_resized)
 
     # Jump
-    if random.randint(0, 1) == 1:
-        mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
+    # if random.randint(0, 1) == 1:
+    #     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
 
     # Check if we lost
     masked_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
@@ -130,5 +130,8 @@ while not keyevents.end:
         # Delay for the game to resume
         time.sleep(1)
         start_time = time.time()
+
+    cv2.imshow('test', masked_platform_resized)
+    cv2.waitKey(1)
 
 print('[X] Quitted')
