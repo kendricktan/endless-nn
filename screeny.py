@@ -1,8 +1,18 @@
+import time
 import numpy as np
 import wx
 
 app = wx.App()
 screen = wx.ScreenDC()
+
+# Used to time screenshot intervals
+def timeit(f):
+    def wrapper(*args, **kwargs):
+        t1 = time.time()
+        ret = f(*args, **kwargs)
+        print('Seconds elapsed: {}'.format(time.time()-t1))
+        return ret
+    return wrapper
 
 def screenshot(region=None):
     global screen

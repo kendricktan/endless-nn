@@ -1,12 +1,15 @@
 import cv2
 import json
-import random
+import os
+import pickle
 import time
-import screeny
 
 import numpy as np
+from neat import nn, population
+from neat.config import Config
 from pymouse import PyMouse
 
+import screeny
 from iolistener import KeyBoardEventListener, MouseClickEventListener
 
 print('--- Endless Run Neural Network Approach ---')
@@ -90,48 +93,82 @@ PLAY_BUTTON_POSITION_X += ROI_GAME[0]
 CLICK_JUMP_LOCATION_X = ROI_GAME[0] + (ROI_GAME[2] / 2)
 CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
 
-start_time = time.time()
-while not keyevents.end:
-    img = screeny.screenshot(region=tuple(ROI_GAME))
-    img = np.array(img)
-    img_roi = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
+# How many runs per network
+RUNS_PER_NET = 5
 
-    # Platform + coin thresholding
-    # Bitwise OR to get better view of platform
-    # Blur to reduce noise
-    # Morphological transformation to reduce noise
-    masked_platform = cv2.inRange(img, LOWER_RGB_PLATFORM, UPPER_RGB_PLATFORM)
-    masked_coin = cv2.inRange(img, LOWER_RGB_COIN, UPPER_RGB_COIN)
-    masked_platform = cv2.bitwise_or(masked_platform, masked_coin)
-    masked_platform = cv2.medianBlur(masked_platform, 3)
-    masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
+def eval_genome(genomes):
+    for g in genomes:
+        net = nn.create_feed_forward_phenotype(g)
+        fitnesses = []
+        for i in range(RUNS_PER_NET):
+            start_time = time.time()
+            while not keyevents.end:
+                img = screeny.screenshot(region=tuple(ROI_GAME))
+                img = np.array(img)
 
-    # Masking player (Assuming it's the default player)
-    # masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
-    # masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
+                # Platform + coin thresholding
+                # Bitwise OR to get better view of platform
+                # Blur to reduce noise
+                # Morphological transformation to reduce noise
+                masked_platform = cv2.inRange(img, LOWER_RGB_PLATFORM, UPPER_RGB_PLATFORM)
+                masked_coin = cv2.inRange(img, LOWER_RGB_COIN, UPPER_RGB_COIN)
+                masked_platform = cv2.bitwise_or(masked_platform, masked_coin)
+                masked_platform = cv2.medianBlur(masked_platform, 3)
+                masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
-    # Resize image (use this as input)
-    masked_platform_resized = cv2.resize(masked_platform, (SETTINGS['scaledx'], SETTINGS['scaledy']),
-                                         interpolation=cv2.INTER_CUBIC)
-    # masked_player_resized = cv2.resize(masked_player, (SETTINGS['scaledx'], SETTINGS['scaledy']), interpolation=cv2.INTER_CUBIC)
+                # Masking player (Assuming it's the default player)
+                # masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
+                # masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
 
-    # Combined image
-    # masked_combined = cv2.bitwise_or(masked_platform_resized, masked_player_resized)
+                # Resize image (use this as input)
+                masked_platform_resized = cv2.resize(masked_platform, (SETTINGS['scaledx'], SETTINGS['scaledy']),
+                                                     interpolation=cv2.INTER_CUBIC)
+                # masked_player_resized = cv2.resize(masked_player, (SETTINGS['scaledx'], SETTINGS['scaledy']), interpolation=cv2.INTER_CUBIC)
 
-    # Jump
-    # if random.randint(0, 1) == 1:
-    #     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
+                # Combined image
+                # masked_combined = cv2.bitwise_or(masked_platform_resized, masked_player_resized)
 
-    # Check if we lost
-    masked_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
-    if np.count_nonzero(masked_button) > 0:
-        print('[-] Lost, time elapsed: {}'.format(time.time() - start_time))
-        mousehandler.click(PLAY_BUTTON_POSITION_X, PLAY_BUTTON_POSITION_Y, 1)
-        # Delay for the game to resume
-        time.sleep(1)
-        start_time = time.time()
+                # Jump
+                # if random.randint(0, 1) == 1:
+                #     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
 
-    cv2.imshow('test', masked_platform_resized)
-    cv2.waitKey(1)
+                # NEAT evaluation takes place here
+                inputs = masked_platform_resized.flatten()
+                output = net.serial_activate(inputs)
+                print(output)
+                if output[0] > 0.5:
+                    print('Jumping!')
+                    mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
+
+                # Check if we lost
+                masked_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
+
+                if np.count_nonzero(masked_button) > 0:
+                    fitness = time.time() - start_time
+
+                    # Impossible to have such a low fitness
+                    if (fitness > 0.5):
+                        fitnesses.append(fitness)
+                        print('[-] Lost, seconds elapsed: {}'.format(fitness))
+
+                    mousehandler.click(PLAY_BUTTON_POSITION_X, PLAY_BUTTON_POSITION_Y, 1)
+                    # Delay for the game to resume
+                    time.sleep(1)
+                    break
+
+        # Genome's fitness is the worst performance across all nets
+        g.fitness = min(fitnesses)
+
+
+# Magic happens here
+local_dir = os.path.dirname(__file__)
+nn_config = Config(os.path.join(local_dir, 'neat_config'))
+pop = population.Population(nn_config)
+pop.run(eval_genome, 20)
+
+print('Number of evaluations: {0}'.format(pop.total_evaluations))
+best_genome = pop.statistics.best_genome()
+with open('nn_winner_genome', 'wb') as f:
+    pickle.dump(best_genome, f)
 
 print('[X] Quitted')
