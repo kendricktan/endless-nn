@@ -8,12 +8,12 @@ stagnation_type      = DefaultStagnation
 reproduction_type    = DefaultReproduction
 
 [phenotype]
-input_nodes          = 32
+input_nodes          = 48
 hidden_nodes         = 2
 output_nodes         = 1
 initial_connection   = fs_neat
-max_weight           = +5
-min_weight           = -5
+max_weight           = +10
+min_weight           = -10
 feedforward          = 1
 activation_functions = sigmoid
 weight_stdev         = 1.0
@@ -31,7 +31,7 @@ prob_mutate_response    = 0.8
 response_mutation_power = 0.5
 prob_mutate_weight      = 0.8
 prob_replace_weight     = 0.3
-weight_mutation_power   = 0.5
+weight_mutation_power   = 0.55
 prob_mutate_activation  = 0.05
 prob_toggle_link        = 0.075
 reset_on_extinction     = 0

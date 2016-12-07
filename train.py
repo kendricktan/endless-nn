@@ -123,7 +123,7 @@ def eval_genome(genomes):
                 img = cv2.resize(img, (
                     481,
                     841)
-                )  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
+                                 )  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
 
                 # Platform + coin thresholding
                 # Bitwise OR to get better view of platform
@@ -137,7 +137,7 @@ def eval_genome(genomes):
 
                 # Input to NN
                 # Only want to feed it 3 tiles in front of the player
-                neat_input = np.zeros((2, SETTINGS['scaledx']))
+                neat_input = np.zeros((3, SETTINGS['scaledx']))
 
                 # Masking player (Assuming it's the default player)
                 # Get largest contour (most likely to be player)
@@ -152,7 +152,7 @@ def eval_genome(genomes):
                     x_in = 0
                     for y in range(0, img.shape[0] - SCALEY, SCALEY):
                         # If they're not 2 grids in front, ignore
-                        if not ((p_y + (p_h * 3)) > y and (p_y + (p_h * 2)) < (y + SCALEY)):
+                        if not ((p_y + (p_h * 3)) > y and (p_y + (p_h)) < (y + SCALEY)):
                             continue
 
                         for x in range(0, img.shape[1] - SCALEX, SCALEX):
@@ -161,7 +161,7 @@ def eval_genome(genomes):
                             cur_img_roi = cur_img_roi.flatten()
 
                             # If there's a decent amount of white in it, consider it a playform
-                            if len(cur_img_roi[cur_img_roi == 255]) > len(cur_img_roi)/3:
+                            if len(cur_img_roi[cur_img_roi == 255]) > len(cur_img_roi) / 4:
                                 neat_input[y_in, x_in] = 1
                                 cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
 
@@ -170,18 +170,11 @@ def eval_genome(genomes):
                         x_in = 0
                         y_in += 1
 
-                        if (y_in) > 1:
+                        if (y_in) > 2:
                             break
 
                 except Exception as e:
                     print("[E] Error: {}".format(e))
-
-                # NEAT evaluation takes place here
-                inputs = neat_input.flatten()
-                output = net.serial_activate(inputs)
-                if output[0] > 0.5:
-                    # Just in case game lags and isn't able to click on the shop button
-                    mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
 
                 # Check if we lost
                 masked_fb_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
@@ -212,12 +205,19 @@ def eval_genome(genomes):
                         time.sleep(1)
                         break
 
+                        # NEAT evaluation takes place here
+                inputs = neat_input.flatten()
+                output = net.serial_activate(inputs)
+                if output[0] > 0.5:
+                    # Just in case game lags and isn't able to click on the shop button
+                    mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
+
                 cv2.imshow('img', img)
                 cv2.waitKey(1)
 
         # Genome's fitness is the worst performance across all nets
         try:
-            g.fitness = np.mean(fitnesses)
+            g.fitness = max(fitnesses)
         except:
             g.fitness = 4.0
 
@@ -227,7 +227,6 @@ local_dir = os.path.dirname(__file__)
 nn_config = Config(os.path.join(local_dir, 'neat_config'))
 pop = population.Population(nn_config)
 pop.run(eval_genome, 2000)
-
 print('Number of evaluations: {0}'.format(pop.total_evaluations))
 best_genome = pop.statistics.best_genome()
 with open('nn_winner_genome', 'wb') as f:
