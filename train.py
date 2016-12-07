@@ -59,7 +59,7 @@ cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
 # Goal is to get the ROI
 cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
 roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(cnts)
-ROI_GAME = [ROI_GAME[0]+roi_x, ROI_GAME[1]+roi_y, roi_w, roi_h]
+ROI_GAME = [ROI_GAME[0] + roi_x, ROI_GAME[1] + roi_y, roi_w, roi_h]
 
 # Uncomment below to debug
 # cv2.waitKey(0)
@@ -105,13 +105,14 @@ CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
 RUNS_PER_NET = 5
 
 # Our scales for converting the image into NN input
-SCALEX = 480/SETTINGS['scaledx']
-SCALEY = 840/SETTINGS['scaledy']
+SCALEX = 480 / SETTINGS['scaledx']
+SCALEY = 840 / SETTINGS['scaledy']
+
 
 def eval_genome(genomes):
     '''Fitness function for the GE'''
     for g in genomes:
-        #visualize.draw_net(g, view=True, fmt='png')
+        # visualize.draw_net(g, view=True, fmt='png')
         net = nn.create_feed_forward_phenotype(g)
         fitnesses = []
         for i in range(RUNS_PER_NET):
@@ -119,7 +120,8 @@ def eval_genome(genomes):
             while not keyevents.end:
                 img = screeny.screenshot(region=tuple(ROI_GAME))
                 img = np.array(img)
-                img = cv2.resize(img, (481, 841)) # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
+                img = cv2.resize(img, (
+                481, 841))  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
 
                 # Platform + coin thresholding
                 # Bitwise OR to get better view of platform
@@ -135,10 +137,10 @@ def eval_genome(genomes):
                 neat_input = np.zeros((SETTINGS['scaledy'], SETTINGS['scaledx']))
                 y_in = 0
                 x_in = 0
-                for x in range(0, img.shape[1]-SCALEX, SCALEX):
-                    for y in range(0, img.shape[0]-SCALEY, SCALEY):
-                        cv2.rectangle(img, (x, y), (x+SCALEX, y+SCALEY), (0, 255, 0), 2)
-                        cur_img_roi = masked_platform[y:y+SCALEY, x:x+SCALEX]
+                for x in range(0, img.shape[1] - SCALEX, SCALEX):
+                    for y in range(0, img.shape[0] - SCALEY, SCALEY):
+                        cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
+                        cur_img_roi = masked_platform[y:y + SCALEY, x:x + SCALEX]
                         cur_img_roi = cur_img_roi.flatten()
 
                         # If there's a decent amount of white in it, consider it a playform
@@ -148,11 +150,6 @@ def eval_genome(genomes):
                         y_in += 1
                     x_in += 1
                     y_in = 0
-
-                # Resize image (use this as input)
-                masked_platform_resized = cv2.resize(masked_platform, (SETTINGS['scaledx'], SETTINGS['scaledy']),
-                                                     interpolation=cv2.INTER_CUBIC)
-
 
                 # NEAT evaluation takes place here
                 inputs = neat_input.flatten()
