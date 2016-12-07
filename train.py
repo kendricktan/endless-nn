@@ -211,7 +211,7 @@ def eval_genome(genomes):
                     break
 
         # Genome's fitness is the worst performance across all nets
-        g.fitness = min(fitnesses)
+        g.fitness = np.mean(fitnesses)
 
 
 # Magic happens here
