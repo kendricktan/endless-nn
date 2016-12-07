@@ -59,6 +59,7 @@ cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
 # Goal is to get the ROI
 cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
 roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(cnts)
+ROI_GAME = [ROI_GAME[0]+roi_x, ROI_GAME[1]+roi_y, roi_w, roi_h]
 
 # Uncomment below to debug
 # cv2.waitKey(0)
@@ -84,14 +85,14 @@ UPPER_RGB_SHOP_BUTTON = np.array(SETTINGS['shopbtn_max_rgb'])
 KERNEL = np.ones((5, 5), np.uint8)
 
 # Play again button position
-# assuming its 6.25% from the bottom
-PLAY_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 6.25 / 100)
+# assuming its 4.25% from the bottom
+PLAY_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 4.25 / 100)
 PLAY_BUTTON_POSITION_X = ROI_GAME[2] / 2
 PLAY_BUTTON_POSITION_Y += ROI_GAME[1]
 PLAY_BUTTON_POSITION_X += ROI_GAME[0]
 
 # Shop replay button (occurs on 2k coins)
-SHOP_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 12.5 / 100)
+SHOP_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 14.5 / 100)
 SHOP_BUTTON_POSITION_X = ROI_GAME[2] / 2
 SHOP_BUTTON_POSITION_Y += ROI_GAME[1]
 SHOP_BUTTON_POSITION_X += ROI_GAME[0]
@@ -118,7 +119,6 @@ def eval_genome(genomes):
             while not keyevents.end:
                 img = screeny.screenshot(region=tuple(ROI_GAME))
                 img = np.array(img)
-                img = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
                 img = cv2.resize(img, (481, 841)) # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
 
                 # Platform + coin thresholding
@@ -132,11 +132,12 @@ def eval_genome(genomes):
                 masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
                 # Input to NN
-                neat_input = np.zeros((SETTINGS['scaledy']+1, SETTINGS['scaledx']+1))
+                neat_input = np.zeros((SETTINGS['scaledy'], SETTINGS['scaledx']))
                 y_in = 0
                 x_in = 0
-                for x in range(0, img.shape[1], SCALEX):
-                    for y in range(0, img.shape[0], SCALEY):
+                for x in range(0, img.shape[1]-SCALEX, SCALEX):
+                    for y in range(0, img.shape[0]-SCALEY, SCALEY):
+                        cv2.rectangle(img, (x, y), (x+SCALEX, y+SCALEY), (0, 255, 0), 2)
                         cur_img_roi = masked_platform[y:y+SCALEY, x:x+SCALEX]
                         cur_img_roi = cur_img_roi.flatten()
 
