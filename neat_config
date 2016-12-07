@@ -19,7 +19,7 @@ activation_functions = sigmoid
 weight_stdev         = 1.0
 
 [genetic]
-pop_size                = 1024
+pop_size                = 512
 max_fitness_threshold   = 59999
 prob_add_conn           = 0.65
 prob_add_node           = 0.65
@@ -49,3 +49,7 @@ max_stagnation       = 10
 [DefaultReproduction]
 elitism              = 2
 survival_threshold   = 0.2
+
+[Save settings]
+checkpoint_time_interval    = 30
+checkpoint_gen_interval     = 5

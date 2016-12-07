@@ -135,7 +135,7 @@ def eval_genome(genomes):
                 masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
                 # Input to NN
-                # Only want to feed it 2 tiles in front of the player
+                # Only want to feed it 3 tiles in front of the player
                 neat_input = np.zeros((2, SETTINGS['scaledx']))
 
                 # Masking player (Assuming it's the default player)
@@ -164,8 +164,12 @@ def eval_genome(genomes):
                                 neat_input[y_in, x_in] = 1
 
                             x_in += 1
+
                         x_in = 0
                         y_in += 1
+
+                        if (y_in) > 1:
+                            break
 
                 except Exception as e:
                     print("[E] Error: {}".format(e))
