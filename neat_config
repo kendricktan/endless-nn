@@ -8,7 +8,7 @@ stagnation_type      = DefaultStagnation
 reproduction_type    = DefaultReproduction
 
 [phenotype]
-input_nodes          = 480
+input_nodes          = 32
 hidden_nodes         = 2
 output_nodes         = 1
 initial_connection   = fs_neat

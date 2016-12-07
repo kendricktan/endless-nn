@@ -121,7 +121,8 @@ def eval_genome(genomes):
                 img = screeny.screenshot(region=tuple(ROI_GAME))
                 img = np.array(img)
                 img = cv2.resize(img, (
-                481, 841))  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
+                    481,
+                    841))  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
 
                 # Platform + coin thresholding
                 # Bitwise OR to get better view of platform
@@ -134,22 +135,40 @@ def eval_genome(genomes):
                 masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
                 # Input to NN
-                neat_input = np.zeros((SETTINGS['scaledy'], SETTINGS['scaledx']))
-                y_in = 0
-                x_in = 0
-                for x in range(0, img.shape[1] - SCALEX, SCALEX):
-                    for y in range(0, img.shape[0] - SCALEY, SCALEY):
-                        cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
-                        cur_img_roi = masked_platform[y:y + SCALEY, x:x + SCALEX]
-                        cur_img_roi = cur_img_roi.flatten()
+                # Only want to feed it 2 tiles in front of the player
+                neat_input = np.zeros((2, SETTINGS['scaledx']))
 
-                        # If there's a decent amount of white in it, consider it a playform
-                        if len(cur_img_roi[cur_img_roi == 255]) > 50:
-                            neat_input[y_in, x_in] = 1
+                # Masking player (Assuming it's the default player)
+                # Get largest contour (most likely to be player)
+                masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
+                masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
+                cnts, _ = cv2.findContours(masked_player.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                try:
+                    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
+                    p_x, p_y, p_w, p_h = cv2.boundingRect(cnts)
 
-                        y_in += 1
-                    x_in += 1
                     y_in = 0
+                    x_in = 0
+                    for y in range(0, img.shape[0] - SCALEY, SCALEY):
+                        # If they're not 2 grids in front, ignore
+                        if not ((p_y + (p_h * 2.5)) > y and (p_y + (p_h * 1.5)) < (y + SCALEY)):
+                            continue
+
+                        for x in range(0, img.shape[1] - SCALEX, SCALEX):
+                            cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
+                            cur_img_roi = masked_platform[y:y + SCALEY, x:x + SCALEX]
+                            cur_img_roi = cur_img_roi.flatten()
+
+                            # If there's a decent amount of white in it, consider it a playform
+                            if len(cur_img_roi[cur_img_roi == 255]) > 50:
+                                neat_input[y_in, x_in] = 1
+
+                            x_in += 1
+                        x_in = 0
+                        y_in += 1
+
+                except Exception as e:
+                    print("[E] Error: {}".format(e))
 
                 # NEAT evaluation takes place here
                 inputs = neat_input.flatten()
