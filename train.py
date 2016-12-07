@@ -5,7 +5,6 @@ import pickle
 import time
 
 import numpy as np
-import visualize
 from neat import nn, population
 from neat.config import Config
 from pymouse import PyMouse
@@ -104,6 +103,10 @@ CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
 # How many runs per network
 RUNS_PER_NET = 5
 
+# Our scales for converting the image into NN input
+SCALEX = 480/SETTINGS['scaledx']
+SCALEY = 840/SETTINGS['scaledy']
+
 def eval_genome(genomes):
     '''Fitness function for the GE'''
     for g in genomes:
@@ -115,6 +118,8 @@ def eval_genome(genomes):
             while not keyevents.end:
                 img = screeny.screenshot(region=tuple(ROI_GAME))
                 img = np.array(img)
+                img = img[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
+                img = cv2.resize(img, (481, 841)) # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
 
                 # Platform + coin thresholding
                 # Bitwise OR to get better view of platform
@@ -126,22 +131,27 @@ def eval_genome(genomes):
                 masked_platform = cv2.medianBlur(masked_platform, 3)
                 masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
-                # Masking player (Assuming it's the default player)
-                # Get largest contour (most likely to be player)
-                masked_player = cv2.inRange(img, LOWER_RGB_PLAYER, UPPER_RGB_PLAYER)
-                masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
-                cnts, _ = cv2.findContours(masked_player.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                try:
-                    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
-                    p_x, p_y, p_w, p_h = cv2.boundingRect(cnts)
-                    cv2.rectangle(img, (p_x, p_y), (p_x + p_w, p_y+p_h), (0, 255, 0), 2)
-                except:
-                    pass
+                # Input to NN
+                neat_input = np.zeros((SETTINGS['scaledy']+1, SETTINGS['scaledx']+1))
+                y_in = 0
+                x_in = 0
+                for x in range(0, img.shape[1], SCALEX):
+                    for y in range(0, img.shape[0], SCALEY):
+                        cur_img_roi = masked_platform[y:y+SCALEY, x:x+SCALEX]
+                        cur_img_roi = cur_img_roi.flatten()
+
+                        if len(cur_img_roi[cur_img_roi == 255]) > 50:
+                            print(len(cur_img_roi[cur_img_roi == 255]) )
+                            neat_input[y_in, x_in] = 1
+
+                        y_in += 1
+                    x_in += 1
+                    y_in = 0
 
                 # Resize image (use this as input)
                 masked_platform_resized = cv2.resize(masked_platform, (SETTINGS['scaledx'], SETTINGS['scaledy']),
                                                      interpolation=cv2.INTER_CUBIC)
-                # masked_player_resized = cv2.resize(masked_player, (SETTINGS['scaledx'], SETTINGS['scaledy']), interpolation=cv2.INTER_CUBIC)
+
 
                 # NEAT evaluation takes place here
                 inputs = masked_platform_resized.flatten()
