@@ -140,8 +140,8 @@ def eval_genome(genomes):
                         cur_img_roi = masked_platform[y:y+SCALEY, x:x+SCALEX]
                         cur_img_roi = cur_img_roi.flatten()
 
+                        # If there's a decent amount of white in it, consider it a playform
                         if len(cur_img_roi[cur_img_roi == 255]) > 50:
-                            print(len(cur_img_roi[cur_img_roi == 255]) )
                             neat_input[y_in, x_in] = 1
 
                         y_in += 1
@@ -154,7 +154,7 @@ def eval_genome(genomes):
 
 
                 # NEAT evaluation takes place here
-                inputs = masked_platform_resized.flatten()
+                inputs = neat_input.flatten()
                 output = net.serial_activate(inputs)
                 if output[0] > 0.5:
                     mousehandler.click(CLICK_JUMP_LOCATION_X, CLICK_JUMP_LOCATION_Y, 1)
