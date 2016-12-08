@@ -7,7 +7,7 @@ from sklearn.neural_network import MLPClassifier
 INPUT = []
 OUTPUT = []
 
-clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 16), random_state=1)
+clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 16), random_state=1, verbose=True)
 
 DATA = ['jump_data.csv', 'normal_data.csv']
 for fi in DATA:
@@ -25,8 +25,3 @@ OUTPUT = np.array(OUTPUT)
 
 clf.fit(INPUT, OUTPUT)
 
-for i in INPUT:
-    if clf.predict([i])[0] == 0:
-        print('yay')
-
-f.close()

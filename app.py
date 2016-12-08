@@ -148,6 +148,11 @@ start_time = time.time()
 while not keyevents.end:
     mouseevents.clicked = False
 
+    # 26 frames per second
+    if IS_COLLECT:
+        if time.time() - start_time < 0.035:
+            continue
+
     img = screeny.screenshot(region=tuple(ROI_GAME))
     img = np.array(img)
     img = cv2.resize(img, (
@@ -229,6 +234,8 @@ while not keyevents.end:
     else:
         if clf.predict([ann_input.flatten()])[0] == 1:
             mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y)
+
+    start_time = time.time()
 
 if IS_COLLECT:
     print('[S] Saving data...')
