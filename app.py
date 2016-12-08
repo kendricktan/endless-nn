@@ -1,19 +1,47 @@
 import cv2
 import json
-import pandas as pd
-import os
-import pickle
+import sys
 import time
 
 import numpy as np
-from neat import nn, population
-from neat.config import Config
+import pandas as pd
 from pymouse import PyMouse
+from sklearn.neural_network import MLPClassifier
 
 import screeny
 from iolistener import KeyBoardEventListener, MouseClickEventListener
 
+# To collect data, run `python app.py collect`
+# Are we collecting data or nah
+IS_COLLECT = 'collect' in str(sys.argv)
+
 print('--- Endless Run Neural Network Approach ---')
+if IS_COLLECT:
+    print('[!] Collect mode...')
+else:
+    print('[!] Autonomous mode...')
+    INPUT = []
+    OUTPUT = []
+
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 16), random_state=1)
+
+    DATA = ['jump_data.csv', 'normal_data.csv']
+    for fi in DATA:
+        with open(fi, 'r') as f:
+            df = pd.read_csv(f)
+
+            # Read into dataframes
+            for i in df.index:
+                # Can't turn string to numpy array easily for some reason?
+                INPUT.append(np.fromstring(df['input'][i][2:-1].replace('\n', '').replace('.', ''), sep=' '))
+                OUTPUT.append(int(df['output'][i][1]))
+
+    INPUT = np.array(INPUT)
+    OUTPUT = np.array(OUTPUT)
+
+    clf.fit(INPUT, OUTPUT)
+
+
 print('[X] Press "q" to quit')
 print('[!] Initializing...')
 
@@ -98,13 +126,6 @@ SHOP_BUTTON_POSITION_X = ROI_GAME[2] / 2
 SHOP_BUTTON_POSITION_Y += ROI_GAME[1]
 SHOP_BUTTON_POSITION_X += ROI_GAME[0]
 
-# Where to click to jump
-CLICK_JUMP_LOCATION_X = ROI_GAME[0] + (ROI_GAME[2] / 2)
-CLICK_JUMP_LOCATION_Y = ROI_GAME[1] + (ROI_GAME[3] / 2)
-
-# How many runs per network
-RUNS_PER_NET = 5
-
 # Our scales for converting the image into NN input
 SCALEX = 480 / SETTINGS['scaledx']
 SCALEY = 840 / SETTINGS['scaledy']
@@ -112,13 +133,18 @@ SCALEY = 840 / SETTINGS['scaledy']
 IN_TOTAL = []
 OUT_TOTAL = []
 
-time.sleep(1)
-print('[!] Click anyway to start collecting data')
+if IS_COLLECT:
+    cv2.imshow('img', img)
+    cv2.waitKey(1)
+
+time.sleep(3)
+print('[!] Click anywhere to continue')
 mouseevents.clicked = False
 while not mouseevents.clicked:
     pass
 
-print('[!] Collecting...')
+print('[!] Starting...')
+start_time = time.time()
 while not keyevents.end:
     mouseevents.clicked = False
 
@@ -127,7 +153,7 @@ while not keyevents.end:
     img = cv2.resize(img, (
         481,
         841)
-    )  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
+                     )  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
 
     # Platform + coin thresholding
     # Bitwise OR to get better view of platform
@@ -169,6 +195,12 @@ while not keyevents.end:
                     ann_input[y_in, x_in] = 1
                     cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
 
+                # Highlight player
+                if y < p_y + p_h and y + SCALEY > p_y:
+                    if x < p_x + p_w and x + SCALEX > p_x:
+                        ann_input[y_in, x_in] = 1
+                        cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (255, 0, 0), 2)
+
                 x_in += 1
 
             x_in = 0
@@ -180,53 +212,33 @@ while not keyevents.end:
     except Exception as e:
         print("[E] Error: {}".format(e))
 
-    # 1 for click, 0 for idle
-    output = []
-    if mouseevents.clicked:
-        output.append([1])
+    if IS_COLLECT:
+        output = []
+        if mouseevents.clicked:
+            output.append(1)
+
+        else:
+            output.append(0)
+
+        IN_TOTAL.append(ann_input.flatten())
+        OUT_TOTAL.append(output)
+
+        cv2.imshow('img', img)
+        cv2.waitKey(1)
+
     else:
-        output.append([0])
+        if clf.predict([ann_input.flatten()])[0] == 1:
+            mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y)
 
-    IN_TOTAL.append(ann_input)
-    OUT_TOTAL.append(output)
+if IS_COLLECT:
+    print('[S] Saving data...')
+    raw_data = {
+        'input': IN_TOTAL,
+        'output': OUT_TOTAL
+    }
 
-    # Check if we lost
-    # masked_fb_button = cv2.inRange(img, LOWER_RGB_PLAY_BUTTON, UPPER_RGB_PLAY_BUTTON)
-    #
-    # if np.count_nonzero(masked_fb_button) > 0:
-    #     mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
-    #     mousehandler.click(PLAY_BUTTON_POSITION_X, PLAY_BUTTON_POSITION_Y, 1)
-    #
-    #     # Delay for the game to resume
-    #     time.sleep(1)
-    #
-    #     # Check for the shop replay button (occurs @ 2k coins)
-    #     img = screeny.screenshot(region=tuple(ROI_GAME))
-    #     img = np.array(img)
-    #     masked_shop_replay = cv2.inRange(img, LOWER_RGB_SHOP_BUTTON, UPPER_RGB_SHOP_BUTTON)
-    #     masked_shop_replay = cv2.erode(masked_shop_replay, KERNEL)
-    #
-    #     if np.count_nonzero(masked_shop_replay) > 15:
-    #         mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
-    #         time.sleep(1)
-    #         break
-    #
-    # output = [0,]
-    # if output[0] > 0.5:
-    #     # Just in case game lags and isn't able to click on the shop button
-    #     mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y, 1)
-
-    #cv2.imshow('img', img)
-    #cv2.waitKey(1)
-
-print('[S] Saving data...')
-raw_data = {
-    'input': IN_TOTAL,
-    'output': OUT_TOTAL
-}
-
-df = pd.DataFrame(raw_data, columns=['input', 'output'])
-with open('data.csv', 'w') as f:
-    df.to_csv(f)
+    df = pd.DataFrame(raw_data, columns=['input', 'output'])
+    with open('data.csv', 'w') as f:
+        df.to_csv(f)
 
 print('[X] Quitted')
