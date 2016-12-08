@@ -17,9 +17,11 @@ class KeyBoardEventListener(PyKeyboardEvent):
 class MouseClickEventListener(PyMouseEvent):
     def __init__(self):
         self.clicked_positions = []
+        self.clicked = False
         super(MouseClickEventListener, self).__init__()
 
     def click(self, x, y, button, press):
         if len(self.clicked_positions) < 2 and (x, y) not in self.clicked_positions:
             print('[E] Mouse Event: click, x: {}, y: {}'.format(x, y))
             self.clicked_positions.append((x, y))
+        self.clicked = True
