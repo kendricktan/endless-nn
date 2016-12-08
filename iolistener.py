@@ -18,6 +18,7 @@ class MouseClickEventListener(PyMouseEvent):
     def __init__(self):
         self.clicked_positions = []
         self.clicked = False
+        self.clicked_time = time.time()
         super(MouseClickEventListener, self).__init__()
 
     def click(self, x, y, button, press):
@@ -25,3 +26,4 @@ class MouseClickEventListener(PyMouseEvent):
             print('[E] Mouse Event: click, x: {}, y: {}'.format(x, y))
             self.clicked_positions.append((x, y))
         self.clicked = True
+        self.clicked_time = time.time()

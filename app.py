@@ -20,12 +20,13 @@ if IS_COLLECT:
     print('[!] Collect mode...')
 else:
     print('[!] Autonomous mode...')
+    print('[!] Preparing neural network...')
     INPUT = []
     OUTPUT = []
 
-    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 16), random_state=1)
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 64, 12), random_state=1, max_iter=32767)
 
-    DATA = ['jump_data.csv', 'normal_data.csv']
+    DATA = ['data_01.csv', 'data_02.csv',]# 'data_03.csv']
     for fi in DATA:
         with open(fi, 'r') as f:
             df = pd.read_csv(f)
@@ -40,7 +41,6 @@ else:
     OUTPUT = np.array(OUTPUT)
 
     clf.fit(INPUT, OUTPUT)
-
 
 print('[X] Press "q" to quit')
 print('[!] Initializing...')
@@ -121,8 +121,9 @@ PLAY_BUTTON_POSITION_Y += ROI_GAME[1]
 PLAY_BUTTON_POSITION_X += ROI_GAME[0]
 
 # Shop replay button (occurs on 2k coins)
-SHOP_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 14.5 / 100)
-SHOP_BUTTON_POSITION_X = ROI_GAME[2] / 2
+#SHOP_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 14.5 / 100)
+SHOP_BUTTON_POSITION_Y = ROI_GAME[3] - (ROI_GAME[3] * 23.5 / 100)
+SHOP_BUTTON_POSITION_X = ROI_GAME[2] / 2.7
 SHOP_BUTTON_POSITION_Y += ROI_GAME[1]
 SHOP_BUTTON_POSITION_X += ROI_GAME[0]
 
@@ -146,19 +147,19 @@ while not mouseevents.clicked:
 print('[!] Starting...')
 start_time = time.time()
 while not keyevents.end:
-    mouseevents.clicked = False
+    # To prevent data from being too bias to not clicking
+    if time.time() - mouseevents.clicked_time > 0.09:
+        mouseevents.clicked = False
 
-    # 26 frames per second
+    # Fixed frames
     if IS_COLLECT:
-        if time.time() - start_time < 0.035:
+        if time.time() - start_time < 0.038:
             continue
 
     img = screeny.screenshot(region=tuple(ROI_GAME))
     img = np.array(img)
-    img = cv2.resize(img, (
-        481,
-        841)
-                     )  # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
+    # Resize to a fixed size that we know works well with the current scalex and scaley (8 x 15)
+    img = cv2.resize(img, (481, 841))
 
     # Platform + coin thresholding
     # Bitwise OR to get better view of platform
@@ -171,8 +172,8 @@ while not keyevents.end:
     masked_platform = cv2.morphologyEx(masked_platform, cv2.MORPH_CLOSE, KERNEL)
 
     # Input to Artifical Neural Network
-    # Only want to feed it 3 tiles in front of the player
-    ann_input = np.zeros((3, SETTINGS['scaledx']))
+    # Only want to feed it 4 tiles in front of the player
+    ann_input = np.zeros((4, SETTINGS['scaledx']))
 
     # Masking player (Assuming it's the default player)
     # Get largest contour (most likely to be player)
@@ -180,39 +181,45 @@ while not keyevents.end:
     masked_player = cv2.morphologyEx(masked_player, cv2.MORPH_OPEN, KERNEL)
     cnts, _ = cv2.findContours(masked_player.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     try:
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
-        p_x, p_y, p_w, p_h = cv2.boundingRect(cnts)
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
 
-        y_in = 0
-        x_in = 0
-        for y in range(0, img.shape[0] - SCALEY, SCALEY):
-            # If they're not 2 grids in front, ignore
-            if not ((p_y + (p_h * 3)) > y and (p_y + (p_h)) < (y + SCALEY)):
-                continue
-
-            for x in range(0, img.shape[1] - SCALEX, SCALEX):
-                cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 0, 255), 2)
-                cur_img_roi = masked_platform[y:y + SCALEY, x:x + SCALEX]
-                cur_img_roi = cur_img_roi.flatten()
-
-                # If there's a decent amount of white in it, consider it a playform
-                if len(cur_img_roi[cur_img_roi == 255]) > len(cur_img_roi) / 4:
-                    ann_input[y_in, x_in] = 1
-                    cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
-
-                # Highlight player
-                if y < p_y + p_h and y + SCALEY > p_y:
-                    if x < p_x + p_w and x + SCALEX > p_x:
-                        ann_input[y_in, x_in] = 1
-                        cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (255, 0, 0), 2)
-
-                x_in += 1
-
-            x_in = 0
-            y_in += 1
-
-            if (y_in) > 2:
+        for cnt in cnts:
+            # Assume smallest player can get is 250
+            if cv2.contourArea(cnt) < 500:
                 break
+
+            p_x, p_y, p_w, p_h = cv2.boundingRect(cnt)
+
+            y_in = 0
+            x_in = 0
+            for y in range(0, img.shape[0] - SCALEY, SCALEY):
+                # If they're not 2 grids in front, ignore
+                if not ((p_y + (p_h * 4.5)) > y and (p_y + (p_h * 1.5)) < (y + SCALEY)):
+                    continue
+
+                for x in range(0, img.shape[1] - SCALEX, SCALEX):
+                    cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 0, 255), 2)
+                    cur_img_roi = masked_platform[y:y + SCALEY, x:x + SCALEX]
+                    cur_img_roi = cur_img_roi.flatten()
+
+                    # If there's a decent amount of white in it, consider it a playform
+                    if len(cur_img_roi[cur_img_roi == 255]) > len(cur_img_roi) / 5:
+                        ann_input[y_in, x_in] = 1
+                        cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (0, 255, 0), 2)
+
+                    # Highlight player
+                    if y < p_y + (p_h * 1.5) and y + SCALEY > p_y + p_h:
+                        if x < p_x + p_w and x + SCALEX > p_x:
+                            ann_input[y_in, x_in] = 2
+                            cv2.rectangle(img, (x, y), (x + SCALEX, y + SCALEY), (255, 0, 0), 2)
+
+                    x_in += 1
+
+                x_in = 0
+                y_in += 1
+
+                if (y_in) > 3:
+                    break
 
     except Exception as e:
         print("[E] Error: {}".format(e))
@@ -234,6 +241,7 @@ while not keyevents.end:
     else:
         if clf.predict([ann_input.flatten()])[0] == 1:
             mousehandler.click(SHOP_BUTTON_POSITION_X, SHOP_BUTTON_POSITION_Y)
+            time.sleep(0.09)
 
     start_time = time.time()
 
