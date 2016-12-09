@@ -1,3 +1,4 @@
+import glob
 import cPickle
 
 import numpy as np
@@ -9,7 +10,7 @@ OUTPUT = []
 
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 16), random_state=1, verbose=True)
 
-DATA = ['data/output_0.csv', ]  # , 'data/output_1.csv']
+DATA = glob.glob('data/*.csv')#['data/output_0.csv', 'data/output_1.csv']
 for fi in DATA:
     with open(fi, 'r') as f:
         df = pd.read_csv(f)

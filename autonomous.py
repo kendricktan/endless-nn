@@ -32,7 +32,7 @@ with open('settings.json', 'r') as f:
 ROI_GAME = get_roi_from_mouse(mouseevents.clicked_positions)
 
 # Our eyes for the game
-eye = Eyes(ROI_GAME, SETTINGS, preview=True)
+eye = Eyes(ROI_GAME, SETTINGS)
 eye.tune_roi()
 
 # Extra
@@ -59,5 +59,6 @@ while not keyevents.end:
 
     if clf.predict([ann_input])[0] == 1:
         mouse.click(eye._click_x, eye._click_y)
+        time.sleep(0.06)
 
 print('[X] Finished')
