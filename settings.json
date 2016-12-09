@@ -1,6 +1,6 @@
 {
-  "scaledx": 16,
-  "scaledy": 30,
+  "grid_x_no": 24,
+  "grid_y_no": 60,
   "platformmin_rgb": [
     120,
     220,

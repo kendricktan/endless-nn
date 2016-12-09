@@ -7,11 +7,15 @@ from pymouse import PyMouseEvent
 class KeyBoardEventListener(PyKeyboardEvent):
     def __init__(self):
         self.end = False
+        self.pressed_c = False
         super(KeyBoardEventListener, self).__init__()
 
     def tap(self, keycode, character, press):  # press is boolean; True for press, False for release
         if character == 'q':
             self.end = True
+
+        elif character == 'c':
+            self.pressed_c = True
 
 
 class MouseClickEventListener(PyMouseEvent):
