@@ -1,6 +1,8 @@
 # endless-nn
 Machine-Learning bot to play Endless Lake on facebook messenger
 
+[larger gyfcat link](https://gfycat.com/CarefreeBreakableAsiaticlesserfreshwaterclam)
+
 ![](https://thumbs.gfycat.com/CarefreeBreakableAsiaticlesserfreshwaterclam-size_restricted.gif)
 
 # Dependencies
