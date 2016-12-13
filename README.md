@@ -1,7 +1,23 @@
 # endless-nn
-Neural Networks to play Endless Lake
+Machine-Learning bot to play Endless Lake on facebook messenger
 
 # Dependencies
 ```
-sudo apt-get install python-xlib python-pydot
+sudo apt-get install python-xlib python-pydot python-opencv
+sudo pip install -r requirements.txt
+```
+
+# Collecting data
+```
+python collect.py
+```
+
+# Training data
+```
+python train.py
+```
+
+# Running the bot
+```
+python autonomous.py
 ```

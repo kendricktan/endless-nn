@@ -1,5 +1,8 @@
 graphviz==0.5.2
 neat-python==0.8
+numpy==1.11.1
+pandas==0.18.1
 Pillow==3.3.1
 PyUserInput==0.1.11
+scikit-learn==0.18.1
 wxPython==3.0.2.0
