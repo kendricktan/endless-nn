@@ -73,6 +73,8 @@ raw_data = {
     'input': NN_INPUT,
     'output': NN_OUTPUT
 }
+
+# Save our data
 df = pd.DataFrame(raw_data, columns=['input', 'output'])
 with open(file_outname, 'w') as f:
     df.to_csv(f)

@@ -1,6 +1,7 @@
 import cPickle
 import json
 import time
+import cv2
 
 from pymouse import PyMouse
 
@@ -19,6 +20,9 @@ keyevents = KeyBoardEventListener()
 mouseevents = MouseClickEventListener()
 keyevents.start()
 mouseevents.start()
+
+# Drawing stuff
+font = cv2.FONT_HERSHEY_SIMPLEX
 
 # Wait until user specifies windows dimensions
 while len(mouseevents.clicked_positions) < 2:
@@ -53,12 +57,23 @@ while not keyevents.pressed_c:
 print('[!] Starting...')
 keyevents.end = False
 
+# Time used to display 'jump'
 start_time = time.time()
+start_time -= 32767
 while not keyevents.end:
     ann_input = eye.roi_to_grid().flatten()
+    img_preview = eye.img_preview
 
     if clf.predict([ann_input])[0] == 1:
+        start_time = time.time()
         mouse.click(eye._click_x, eye._click_y)
         time.sleep(0.06)
+
+    # Shows text for 0.5 seconds
+    if time.time() - start_time < 0.5:
+        cv2.putText(img_preview, 'Jump!', (65, 65), font, 2, (0, 0, 0), 2)
+
+    cv2.imshow('preview', img_preview)
+    cv2.waitKey(1)
 
 print('[X] Finished')

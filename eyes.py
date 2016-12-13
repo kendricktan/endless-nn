@@ -43,14 +43,14 @@ class Eyes:
         self._grid_h = 840 / self._settings['grid_y_no']
 
         # Where to click to jump
-        self._click_x = self._roi[2] / 2.7
+        self._click_x = self._roi[2] / 2
         self._click_x += self._roi[0]
-        self._click_y = self._roi[3] - (self._roi[3] * 23.5 / 100)
+        self._click_y = self._roi[3] - (self._roi[3] * 25 / 100)
         self._click_y += self._roi[1]
 
     def tune_roi(self):
         '''
-        Given the supplied roi, try and crop out unecessary information
+        Given the supplied roi, try and crop out unnecessary information
         '''
         # Grab screenshot of image
         img = screeny.screenshot(region=tuple(self._roi))
@@ -154,6 +154,9 @@ class Eyes:
 
         except Exception as e:
             print('[E] {}'.format(e))
+
+        # Save image
+        self.img_preview = img_preview
 
         # Show ya?
         if self._preview:

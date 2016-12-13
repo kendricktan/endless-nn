@@ -8,6 +8,7 @@ from sklearn.neural_network import MLPClassifier
 INPUT = []
 OUTPUT = []
 
+# We define our ANN here
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(64, 16), random_state=1, verbose=True)
 
 DATA = glob.glob('data/*.csv')#['data/output_0.csv', 'data/output_1.csv']
@@ -24,6 +25,7 @@ for fi in DATA:
 INPUT = np.array(INPUT)
 OUTPUT = np.array(OUTPUT)
 
+# Try and fit the data here
 clf.fit(INPUT, OUTPUT)
 
 with open('model.pkl', 'wb') as fid:
